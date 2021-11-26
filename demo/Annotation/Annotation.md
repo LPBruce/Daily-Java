@@ -14,7 +14,7 @@ public @interface Test {
 ```
 + @interface创建了一个真正的Java接口
 + @Target和@Retention是元注解
-+ 
++ 标准注解  元注解
 +
 + 
  
