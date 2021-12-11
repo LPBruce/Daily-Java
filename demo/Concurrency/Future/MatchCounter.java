@@ -16,12 +16,15 @@ import java.util.concurrent.FutureTask;
 class MatchCounter implements Callable<Integer> {
     private File directory;
     private String keyword;
+
     public MatchCounter(File directory, String keyword) {
         this.directory = directory;
         this.keyword = keyword;
     }
+
     // callable接口核心函数，是线程执行的核心流程，表示注意返回值位Integer
     public Integer call() throws IOException {
+        System.out.printf("开启一个文件遍历线程：当前文件名为 {}%n", directory.getName());
         int count = 0;
         try {
             File[] files = directory.listFiles();
@@ -30,6 +33,7 @@ class MatchCounter implements Callable<Integer> {
             for (File file : files) {
                 // 如果该file是个文件夹，意味着需要重新开启一个线程进行分析计算。
                 // 因为需要返回值，所以使用使用callable和Future组合的形式
+                // 这里也意味着，只要是搜索一个文件，就是开启一个线程
                 if (file.isDirectory()) {
                     // 如果是个文件夹，则新建一个Matcher类实例进行遍历
                     MatchCounter counter = new MatchCounter(directory, keyword);
@@ -48,6 +52,8 @@ class MatchCounter implements Callable<Integer> {
                     }
                 }
             }
+            
+            // 获取遍历线程的结果
             for (Future<Integer> result : results) {
                 try {
                     count += result.get();
@@ -58,6 +64,7 @@ class MatchCounter implements Callable<Integer> {
         } catch (InterruptedException e) {}
         return count;
     }
+
     public boolean search(File file) throws IOException {
         System.out.printf("%s文件搜索线程开始%n", file.getName());
         try {
@@ -68,7 +75,7 @@ class MatchCounter implements Callable<Integer> {
                     String line = in.nextLine();
                     if (line.contains(keyword)) {
                         found = true;
-                        // System.out.printf("%s:%d:%s%n", file.getPath(), lineNumber, line);
+                        System.out.printf("找到了，%s:%s%n", file.getPath(), line);
                     }
                 }
                 return found;
