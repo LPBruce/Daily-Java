@@ -33,7 +33,7 @@ public class BlockingQueueTest {
                 } catch(InterruptedException e) {}
             };
     
-            // 开始一个生产者线程，讲所有温江放进一个阻塞队列中
+            // 开始一个生产者线程，讲所有文件放进一个阻塞队列中
             new Thread(enumerator).start();
             for (int i = 0; i < SEARCH_THREADS; i++) {
                 Runnable searcher = () -> {
@@ -49,7 +49,7 @@ public class BlockingQueueTest {
                             }
                         }
                     } catch (IOException e) {
-                    e.printStackTrace();
+                        e.printStackTrace();
                     } catch (InterruptedException e) {
                     }
                };

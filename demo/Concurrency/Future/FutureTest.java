@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
@@ -17,36 +18,16 @@ public class FutureTest {
             System.out.print("Enter keyword (e.g. volatile):");
             String keyword = in.nextLine();
 
-            Runnable enumerator = () -> {
-                try {
-                    enumerate(new File(directory));
-                    // 虚拟目录，用来标志队列内容结束
-                    queue.put(DUMMY);
-                } catch(InterruptedException e) {}
-            };
-    
-            // 开始一个生产者线程，讲所有温江放进一个阻塞队列中
-            new Thread(enumerator).start();
-            for (int i = 0; i < SEARCH_THREADS; i++) {
-                Runnable searcher = () -> {
-                    try {
-                        boolean done = false;
-                        while(!done) {
-                            File file = queue.take();
-                            if (file == DUMMY) {
-                                queue.put(file);
-                                done = true;
-                            } else {
-                                search(file, keyword);
-                            }
-                        }
-                    } catch (IOException e) {
-                    e.printStackTrace();
-                    } catch (InterruptedException e) {
-                    }
-               };
-               new Thread(searcher).start();
-            };
+            MatchCounter counter = new MatchCounter(new File(directory), keyword));
+            FutureTask<Integer> task = new FutureTask<>(counter);
+            Thread t = new Thread(task);
+            t.start();
+
+            try {
+                System.out.printf(task.get() + " matching files.");
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {}
         }
     }
 
@@ -60,7 +41,7 @@ public class FutureTest {
             this.keyword = keyword;
         }
 
-        public Integer call() {
+        public Integer call() throws IOException {
             int count = 0;
             try {
                 File[] files = directory.listFiles();
@@ -73,31 +54,42 @@ public class FutureTest {
                         results.add(task);
                         Thread t = new Thread(task);
                         t.start();
-                    })
-                } else {
-                    if (search(file)) {
-                        count++;
+                    } else {
+                        if (search(file)) {
+                            count++;
+                        }
                     }
                 }
-            }
 
-            for (Future<Integer> future : results) {
-                
-            }
-        }
-    }
-
-    public static boolean search(File file) throws IOException {
-        System.out.printf("%s文件搜索线程开始%n", file.getName());
-        try (Scanner in = new Scanner(file, "UTF-8")) {
-            int lineNumber = 0;
-            while (in.hasNextLine()) {
-                lineNumber++;
-                String line = in.nextLine();
-                if (line.contains(keyword)) {
-                    System.out.printf("%s:%d:%s%n", file.getPath(), lineNumber, line);
+                for (Future<Integer> result : results) {
+                    try {
+                        count += result.get();
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    }
                 }
+            } catch (InterruptedException e) {}
+            return count;
+        }
+
+        public boolean search(File file) throws IOException {
+            System.out.printf("%s文件搜索线程开始%n", file.getName());
+            try {
+                try (Scanner in = new Scanner(file, "UTF-8")) {
+                    boolean found = false;
+                    while (!found && in.hasNextLine()) {
+                        String line = in.nextLine();
+                        if (line.contains(keyword)) {
+                            found = true;
+                            // System.out.printf("%s:%d:%s%n", file.getPath(), lineNumber, line);
+                        }
+                    }
+                    return found;
+                }
+            } catch (IOException e) {
+                return false;
             }
+    
         }
     }
 }
