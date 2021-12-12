@@ -24,7 +24,7 @@ class MatchCounter implements Callable<Integer> {
 
     // callable接口核心函数，是线程执行的核心流程，表示注意返回值位Integer
     public Integer call() throws IOException {
-        System.out.printf("开启一个文件遍历线程：当前文件名为 {}%n", directory.getName());
+        System.out.printf("开启一个文件遍历线程：当前文件名为 %s%n", directory.getName());
         int count = 0;
         try {
             File[] files = directory.listFiles();
@@ -36,7 +36,7 @@ class MatchCounter implements Callable<Integer> {
                 // 这里也意味着，只要是搜索一个文件，就是开启一个线程
                 if (file.isDirectory()) {
                     // 如果是个文件夹，则新建一个Matcher类实例进行遍历
-                    MatchCounter counter = new MatchCounter(directory, keyword);
+                    MatchCounter counter = new MatchCounter(file, keyword);
                     // 将此实例传入FutureTash包装器，讲Matcher实现的callable接口转换成Future和Runnable，
                     // 返回实现二者的接口的实例 Task
                     FutureTask<Integer> task = new FutureTask<>(counter);
