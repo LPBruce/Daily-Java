@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
@@ -16,10 +17,13 @@ import java.util.concurrent.FutureTask;
 public class MatchCounter implements Callable<Integer> {
     private File directory;
     private String keyword;
+    private ExecutorService pool;
+    private int count;
 
-    public MatchCounter(File directory, String keyword) {
+    public MatchCounter(File directory, String keyword, ExecutorService pool) {
         this.directory = directory;
         this.keyword = keyword;
+        this.pool = pool;
     }
 
     // callable接口核心函数，是线程执行的核心流程，表示注意返回值位Integer
