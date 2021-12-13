@@ -36,16 +36,14 @@ public class MatchCounter implements Callable<Integer> {
             List<Future<Integer>> results = new ArrayList<>();
 
             for (File file : files) {
-                // 如果该file是个文件夹，意味着需要重新开启一个线程进行分析计算。
-                // 因为需要返回值，所以使用使用callable和Future组合的形式
-                // 这里也意味着，只要是搜索一个文件，就是开启一个线程
+                // 如果该file是个文件夹，则利用线程池进行计算。
                 if (file.isDirectory()) {
                     // 如果是个文件夹，则新建一个Matcher类实例进行遍历
                     MatchCounter counter = new MatchCounter(file, keyword, pool);
                     // 将此实例传入FutureTash包装器，讲Matcher实现的callable接口转换成Future和Runnable，
-                    // 返回实现二者的接口的实例 Task
+                    // 将Callable传入线程池
                     Future<Integer> result = pool.submit(counter);
-                    // 将Tash接口实例放入Future列表中，用于后期获得线程结果
+                    // 累加Future结果
                     results.add(result);
                 } else {
                     // 判断改文件是否有关键字，如果有的话，则+1
